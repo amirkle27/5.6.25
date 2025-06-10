@@ -15,48 +15,39 @@ app = FastAPI(title="Example API", description="A simple FastAPI with Swagger UI
 def read_root():
     return {"message": "Welcome to the FastAPI example!"}
 
-
 ###########################  1  ###########################
 
 @app.get("/get-text-and-label/text/")
 def get_text_and_label(text: str):
-    doc = nlp(text)
-    entities = [{"text": ent.text, "label": ent.label_} for ent in doc.ents]
+    entities = bl.get_text_and_label(nlp(text))
     return entities
-
 
 ###########################  2  ###########################
 
 @app.get("/get-person-in-text/text")
 def get_person_ent(text:str):
-    doc = nlp(text)
-    entities = [{"Person":ent.text} for ent in doc.ents if ent.label_ == "PERSON"]
-    return entities
+    person_entities = bl.get_person_ents(nlp(text))
+    return person_entities
 
 ###########################  3  ###########################
 
 @app.get("/get-lemma-in-text/text")
 def get_lemma(text:str):
-    doc = nlp(text)
-    lemmas = [{f"{token.text:7} ->": token.lemma_} for token in doc ]
+    lemmas = bl.get_lemmas(nlp(text))
     return lemmas
 
 ###########################  4  ###########################
 
 @app.get("/not-stop-words/text")
 def get_not_stop_words(text:str):
-    doc = nlp(text)
-    not_stop_words = [{token.text} for token in doc if not token.is_stop]
+    not_stop_words = bl.not_stop(nlp(text))
     return f"Not Stop Words in Text: {not_stop_words}"
 
 ###########################  5  ###########################
 
 @app.get("/get-stop-words/text")
 def get_stop_words(text:str):
-    nlp.vocab["powerful"].is_stop = True
-    doc = nlp(text)
-
-    stop_words = [{token.text} for token in doc if token.is_stop]
+    stop_words = bl.get_stop_words(nlp(text))
     return f"stop_words are: {stop_words}"
 
 ###########################  6  ###########################
@@ -64,47 +55,21 @@ from spacy.matcher import PhraseMatcher
 
 @app.get("/phrasematcher/text")
 def get_phrases(text: str):
-    matcher = PhraseMatcher(nlp.vocab)
-    phrases = ["artificial intelligence","Artificial Intelligence"]
-    patterns = [nlp(p) for p in phrases]
-
-    matcher.add("AI_PHRASE", patterns)
-
-    doc = nlp(text)
-    matches = matcher(doc)
-
-    results = []
-    for match_id, start, end in matches:
-        results.append(doc[start:end].text)
-
-    return {"matches": results}
+    phrase_matches = bl.phrase_match(nlp(text))
+    return {"matches": phrase_matches}
 
 ###########################  7  ###########################
 
 @app.get("/get-token-details/text")
 def get_token_details(text:str):
-    doc = nlp(text)
-
-    details = [{"token": token.text, "token.pos": token.pos_, "description": spacy.explain(token.pos_)} for token in doc]
-    return details
+    token_details = bl.get_t_det(nlp(text))
+    return token_details
 
 ###########################  8  ###########################
 
-from spacy.language import Language
-
-@Language.component("custom_separator")
-def custom_separator(doc):
-    for token in doc[:-1]:
-        if token.text == '^':
-            doc[token.i + 1].is_sent_start = True
-    return doc
-
-nlp.add_pipe("custom_separator", before="parser")
-
 @app.get("/custom-sentence-split/text")
 def split_sentences(text: str):
-    doc = nlp(text)
-    sentences = [sent.text for sent in doc.sents]
+    sentences = bl.split_sen(nlp(text))
     return {"sentences": sentences}
 
 ###########################  #  ###########################
